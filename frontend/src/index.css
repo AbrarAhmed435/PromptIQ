@@ -1,0 +1,78 @@
+*{
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body{
+  background-color: rgba(0, 0, 0, 0.836);
+  color: whitesmoke;
+}
+
+.register{
+  display: flex;
+  flex-direction: column;
+  border: 3px solid rgb(17, 235, 137);
+  width: 50%;
+  margin: auto;
+  background-color: rgb(27, 26, 25);
+  padding: 20px;
+  /* margin-top: 20vh; */
+  border-radius: 20px;
+  gap: 2rem;
+  
+
+}
+.register button{
+  width: 55%;
+  margin: auto;
+  height: 50px;
+  background-color:rgb(17, 235, 137);
+  
+  outline: none;
+  border: none;
+  color:white;
+  font-size: 1.5rem;
+  border-radius: 10px;
+  transition: transform 0.3s ,box-shadow 0.3s;
+  &:hover{
+    transform: scale(1.03);
+    box-shadow: 5px 5px 5px white;
+  }
+}
+.register-heading{
+  text-align: center;
+  width: 40%;
+  background-color: rgb(199, 17, 235);
+  margin: auto;
+  margin-top: 3vh;
+  margin-bottom: 3vh;
+  padding: 10px;
+  border-radius: 10px;
+
+}
+.register input{
+  height: 40px;
+  padding: 5px;
+  outline: none;
+  border-radius: 10px;
+  background-color: black;
+  color:white;
+  outline: none;
+  border: none;
+  &:focus{
+    border: 1px solid white;
+    box-shadow: 2px 2px 2px white;
+  }
+}
+
+@media (max-width:700px){
+  .register{
+    width: 75%;
+  }
+}
+
+@media (max-width:500px){
+  .register{
+    width: 95%;
+  }
+}
