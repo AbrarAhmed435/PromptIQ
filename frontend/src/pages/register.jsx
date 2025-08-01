@@ -43,7 +43,7 @@ export default function Register() {
 
   return (
     <div>
-      <h2 className="register-heading">PROMTIFY</h2>
+      <h2 className="register-heading">PromptIQ</h2>
       <form onSubmit={handleRegister} className="register">
         <input
           type="text"

@@ -59,6 +59,7 @@ def createChatTitle(user_message):
 def prompt_gpt(request):
     chat_id=request.data.get("chat_id")
     content=request.data.get("content")
+    print(request.data)
     
     if not chat_id:
         return Response({"error":"Chat ID was not provide"},status=400)
