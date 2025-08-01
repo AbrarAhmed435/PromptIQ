@@ -72,8 +72,9 @@ def prompt_gpt(request):
         return Response({"error":"Unauthorized acces to this chat"},status=403)
 
 
-    chat.title=createChatTitle(content)
-    chat.save()
+    if created or not chat.title:
+        chat.title = createChatTitle(content)
+        chat.save()
     
     chat_message=ChatMessage.objects.create(role="user",chat=chat,content=content)
     
@@ -98,7 +99,7 @@ def prompt_gpt(request):
         return Response({"Error": f"An errror from openAI{str(e)}"})
     
     ChatMessage.objects.create(role="assistant",content=openai_reply,chat=chat)
-    return Response({"reply":openai_reply},status=status.HTTP_201_CREATED)
+    return Response({"reply":openai_reply,'title':chat.title},status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
