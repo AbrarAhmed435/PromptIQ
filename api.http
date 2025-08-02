@@ -25,6 +25,10 @@ POST http://localhost:8000/api/token/ HTTP/1.1
 Content-Type: application/json
 
 {
-  "email": "cena@example.com",
-  "password":"test1234"
+  "email": "abrar_2022bite057@nitsri.ac.in",
+  "password":"chips1234"
 }
+###
+
+DELETE http://localhost:8000/api/chat/delete/	556e8402-e29b-41d4-a715-449659460810/ HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MTQ3Nzc5LCJpYXQiOjE3NTQxNDU5NzksImp0aSI6ImI3MWEzMjlhMGMwMTRlYjI5Y2Q0YWEwOTFmZWFjYjQ5IiwidXNlcl9pZCI6IjE0In0.kE7jTx--KX2wG2ZOKsjL8_XrveU732MRjQTioeLZh1M

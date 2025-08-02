@@ -110,7 +110,16 @@ def user_chats(request):
     data = [{"id": str(chat.id), "title": chat.title, "created_at": chat.created_at} for chat in chats]
     return Response(data)
 
-
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_chat(request,chat_id):
+    try:
+        chat=Chat.objects.get(id=chat_id,user=request.user)
+        chat.delete()
+        return Response({"message":"chat deleted successfully"},status.HTTP_200_OK)
+    except Chat.DoesNotExist:
+        return Response({"error":"Chat not found or unauthorized acces"},status.HTTP_403_FORBIDDEN)
+    
 
 #TO LOAD ENTIRE CHAT HISTORY
 

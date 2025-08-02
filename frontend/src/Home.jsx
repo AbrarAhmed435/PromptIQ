@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { IoSend } from "react-icons/io5";
+import { MdDelete } from "react-icons/md";
 import api from "./api";
 import { IoArrowUpCircleSharp } from "react-icons/io5";
 import { FaArrowCircleUp } from "react-icons/fa";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { IoAddOutline } from "react-icons/io5";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import {useNavigate} from 'react-router-dom'
 
 /* 
 POST http://localhost:8000/api/prompt_gpt/ HTTP/1.1
@@ -23,34 +26,52 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
-  const chat_id = "556e8402-e29b-41d4-a715-449657613810";
+  const [chat_id,setChatId]= useState("556e8402-e29b-41d4-a715-048657618699");
   const [history, setHistory] = useState([]);
   const [fullReply, setFullReply] = useState("");
-  const [waiting,setWaiting]=useState("");
+  const [waiting, setWaiting] = useState("");
+  const typingIndex = useRef(0);
+  const [showMarkdown, setShowMarkdown] = useState(false);
+  const navigate=useNavigate();
 
   useEffect(() => {
     fetchHistory();
   }, []);
 
   useEffect(() => {
-  if (!fullReply) return;
+    if (!fullReply) return;
 
-  setReply(""); // clear current reply before typing new one
+    setReply(""); // clear current reply before typing new one
 
-  let i = 0;
-  const interval = setInterval(() => {
-    setReply((prev) => prev + fullReply.charAt(i));
-    i++;
+    let i = 0;
+    const interval = setInterval(() => {
+      setReply((prev) => prev + fullReply.charAt(i));
+      i++;
 
-    if (i >= fullReply.length) {
-      clearInterval(interval);
+      if (i >= fullReply.length) {
+        clearInterval(interval);
+      }
+    }, 1); // typing speed (ms per character)
+
+    return () => clearInterval(interval); // clean up if interrupted
+  }, [fullReply]);
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Delete this chat?");
+    if (!confirmDelete) return;
+    try {
+      const res = await api.delete(`api/chat/delete/${id}/`);
+      if (res.status == 200) {
+        fetchHistory();
+        setReply("");
+      } else {
+        console.group(res.status);
+        alert("failed to delete chat history");
+      }
+    } catch (error) {
+      alert(error);
     }
-  }, 1); // typing speed (ms per character)
-
-  return () => clearInterval(interval); // clean up if interrupted
-}, [fullReply]);
-
-  /*  path("/user/chats/",views.user_chats,name="user chats"), */
+  };
   const fetchHistory = async () => {
     try {
       const res = await api.get("/api/user/chats/");
@@ -65,7 +86,8 @@ export default function Home() {
 
   const sendQuery = async (e) => {
     e.preventDefault();
-    setWaiting("Thinking...")
+    setWaiting("Thinking...");
+    setFullReply("");
     console.log("Sending:", { chat_id, content: prompt });
     const userPrompt = prompt;
     setPrompt("");
@@ -76,13 +98,15 @@ export default function Home() {
         content: userPrompt,
       });
       setPrompt("");
-      if (res.status === 201) {
+      if (res.status === 201||res.status===200) {
         setWaiting("");
         setFullReply(res.data.reply);
         // console.log(res.data.title);
         // console.log(res.data.reply);
         fetchHistory();
         // console.log(res.data.reply)
+      }else{
+        setWaiting("Wating finished")
       }
     } catch (error) {
       alert(error);
@@ -92,9 +116,25 @@ export default function Home() {
   const fetchChat = () => {
     console.log("clidked");
   };
+  const handleLogout=()=>{
+    const confirmlogout=window.confirm("Are you sure to logout");
+    if (!confirmlogout) return ;
+    navigate('/logout');
+  }
+  const handleNewChat = () => {
+  let newId = "556e8402-e29b-41d4-a715-";
+  for (let i = 0; i < 12; i++) {
+    newId += Math.floor(Math.random() * 10);
+  }
+  setWaiting("");
+  setReply("");
+  setChatId(newId);  // Updates state
+  console.log("New Chat ID:", newId);
+};
 
   return (
     <div className="home-body">
+      <h3 className="logout" onClick={handleLogout}>Logout</h3>
       {/* <form onSubmit={fetchchat} className="chat-box">
                 <input type="text" 
                 value={prompt}
@@ -109,9 +149,15 @@ export default function Home() {
             ></textarea> */}
       <div className="chat-history">
         <h2 className="histroy-head">HISTORY</h2>
+        <button onClick={handleNewChat} className="new-chat"><IoAddOutline size={20} style={{verticalAlign:'middle'}} />New Chat</button>
         <div style={{ paddingTop: "0px" }} className="title">
           {history.map((his) => (
-            <p key={his.id}>{his.title}</p>
+            <div key={his.id} className="title-item">
+              <p>{his.title}</p>
+              <button onClick={() => handleDelete(his.id)}>
+                <MdDelete style={{ verticalAlign: "middle", color: "white" }} />
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -123,31 +169,31 @@ export default function Home() {
                  value={reply}
             readOnly
                 ></textarea> */}
-       <div className="reply-box markdown-body">
-        <p>{waiting}</p>
-      <ReactMarkdown
-        children={reply}
-        components={{
-          code({ node, inline, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || "");
-            return !inline && match ? (
-              <SyntaxHighlighter
-                style={oneDark}
-                language={match[1]}
-                PreTag="div"
-                {...props}
-              >
-                {String(children).replace(/\n$/, "")}
-              </SyntaxHighlighter>
-            ) : (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            );
-          },
-        }}
-      />
-    </div>
+        <div className="reply-box markdown-body">
+          <p>{waiting}</p>
+          <ReactMarkdown
+            children={reply}
+            components={{
+              code({ node, inline, className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || "");
+                return !inline && match ? (
+                  <SyntaxHighlighter
+                    style={oneDark}
+                    language={match[1]}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              },
+            }}
+          />
+        </div>
 
         <form onSubmit={sendQuery} className="prompt-area">
           <input
