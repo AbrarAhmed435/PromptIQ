@@ -1,10 +1,10 @@
 POST http://localhost:8000/api/prompt_gpt/ HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUzOTcyMjA5LCJpYXQiOjE3NTM5NzA0MDksImp0aSI6ImMzOWJjMmVjZTYzYzRkOTY5MDY1ZWM1YzZhYzQ3NTk0IiwidXNlcl9pZCI6IjEzIn0._RrJmJqyAGKxjwQeUaeAKwyiS-N4xRO1tMAHKk5QDlY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjE1NjY1LCJpYXQiOjE3NTQyMTIwNjUsImp0aSI6ImU5MDM3OTIyM2E3NDRiY2JhYWQ0ZThhNGYxYmMxNDFjIiwidXNlcl9pZCI6IjE0In0.LZiH0aozgWr7UKg9R1tnV8TDug-2OEezupGkDu7Zb2k
 
 {
-    "chat_id":"550e8400-e29b-41d4-a716-446655440900",
-    "content":"and of neptune?"
+    "chat_id":"550e8400-e29b-41d4-a716-446655440200",
+    "content":"how to get certified"
 }
 
 ###
@@ -32,3 +32,7 @@ Content-Type: application/json
 
 DELETE http://localhost:8000/api/chat/delete/	556e8402-e29b-41d4-a715-449659460810/ HTTP/1.1
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MTQ3Nzc5LCJpYXQiOjE3NTQxNDU5NzksImp0aSI6ImI3MWEzMjlhMGMwMTRlYjI5Y2Q0YWEwOTFmZWFjYjQ5IiwidXNlcl9pZCI6IjE0In0.kE7jTx--KX2wG2ZOKsjL8_XrveU732MRjQTioeLZh1M
+
+###
+GET http://localhost:8000/api/chat/history/556e8402-e29b-41d4-a715-776766698777/ HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MTYxMzI3LCJpYXQiOjE3NTQxNTk1MjcsImp0aSI6ImMxNzE2NTI5MDBkMzQ1NzdiMmEzZTZkZWY5Mjg4NzhkIiwidXNlcl9pZCI6IjE0In0.E3dya_nGsYfmljEUSM2cQKz1GWZMeudL54qzusGQkPs

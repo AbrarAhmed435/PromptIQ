@@ -44,7 +44,8 @@ def createChatTitle(user_message):
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "assistant", "content": "Give a short, descriptive title for this conversation in not more than 5 words."},
+               {"role": "system", "content": "You are a title generator. Your task is to return a very short, descriptive title in at most 5 words. Do not explain or respond with paragraphs."},
+
                 {"role": "user", "content": user_message},
             ]
         )
@@ -119,7 +120,32 @@ def delete_chat(request,chat_id):
         return Response({"message":"chat deleted successfully"},status.HTTP_200_OK)
     except Chat.DoesNotExist:
         return Response({"error":"Chat not found or unauthorized acces"},status.HTTP_403_FORBIDDEN)
-    
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_chat_conversation(request,chat_id):
+    print("funct hit")
+    try:
+        chat=Chat.objects.get(id=chat_id,user=request.user)
+        messages=ChatMessage.objects.filter(chat=chat).order_by("created_at")
+        
+        data={
+            "chat_id":str(chat_id),
+            "title":chat.title,
+            "messages":[
+                {
+                    "role":message.role,
+                    "content":message.content,
+                    "timestamp":message.created_at
+                }
+                for message in messages
+            ]
+        }
+        return Response(data,status=200)
+    except Chat.DoesNotExist:
+        return Response({"error":"Chat not found"},status=404)
+
 
 #TO LOAD ENTIRE CHAT HISTORY
 
