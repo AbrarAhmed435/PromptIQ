@@ -24,6 +24,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiY
 
 export default function Home() {
   const [dummyp, setDummyP] = useState("");
+  const [pdfFile, setPdfFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState("");
   const [prompt, setPrompt] = useState("");
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,6 +62,40 @@ export default function Home() {
     return () => clearInterval(interval); // clean up if interrupted
   }, [fullReply]);
 
+ const handlePDFUpload = async () => {
+  if (!pdfFile) {
+    alert("Please select a PDF file first");
+    return;
+  }
+
+  if (!chat_id) {
+    alert("Chat ID is missing");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("pdf_file", pdfFile);
+  formData.append("chat_id", chat_id);  // ✅ Send chat_id
+
+  try {
+    const res = await api.post("/api/pdfs/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    if (res.status === 201 || res.status === 200) {
+      setUploadStatus("PDF uploaded successfully");
+    } else {
+      setUploadStatus("Failed to upload PDF");
+    }
+  } catch (error) {
+    console.log("PDF upload error:", error);
+    setUploadStatus("Error uploading PDF");
+  }
+};
+
+
   const handleDelete = async (id) => {
     // const confirmDelete = window.confirm("Delete this chat?");
     // if (!confirmDelete) return;
@@ -75,7 +111,7 @@ export default function Home() {
     } catch (error) {
       alert(error);
     }
-     handleNewChat();
+    handleNewChat();
   };
   const handlefetchChat = async (chat_id) => {
     setWelcome("");
@@ -252,6 +288,17 @@ export default function Home() {
             <IoSend size={32} style={{ verticalAlign: "middle" }} />
           </button>
         </form>
+        <div className="pdf-upload-section">
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setPdfFile(e.target.files[0])}
+          />
+          <button type="button" onClick={handlePDFUpload}>
+            Upload PDF
+          </button>
+          <p>{uploadStatus}</p>
+        </div>
       </div>
     </div>
   );

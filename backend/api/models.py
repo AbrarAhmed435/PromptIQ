@@ -35,3 +35,14 @@ class ChatMessage(models.Model):
     
     def __str__(self):
         return f"{self.role}: {self.content[:50]}"
+    
+class UploadedPDF(models.Model):
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    chat=models.ForeignKey('Chat',on_delete=models.CASCADE,related_name="pdfs",null=True,blank=True)
+    pdf_file=models.FileField(upload_to='pdfs/')
+    uploaded_at=models.DateTimeField(auto_now_add=True)
+    text_content=models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.pdf_file.name} for {self.user.username} (chat: {self.chat_id})"
+    

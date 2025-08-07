@@ -360,6 +360,7 @@ body{
     border-bottom-left-radius: 15px;
     color:rgb(246, 244, 241);
   height: auto;
+  padding: 8px;
   &:focus{
     border: 3px solid rgb(8, 232, 236);
   }

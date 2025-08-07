@@ -1,13 +1,18 @@
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status,viewsets
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
-from .models import Chat,ChatMessage
+from .models import Chat,ChatMessage,UploadedPDF
 from rest_framework import permissions,generics
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import RegisterSerializer,EmailTokenObtainPairSerializer
+from .serializers import RegisterSerializer,EmailTokenObtainPairSerializer,UploadedPDFSerializer
 from django.contrib.auth import get_user_model
+from rest_framework.parsers import MultiPartParser,FormParser
+from rest_framework.exceptions import ValidationError
+import fitz
+
+import PyPDF2
 
 from openai import OpenAI
 client=OpenAI()
@@ -55,53 +60,119 @@ def createChatTitle(user_message):
     return title
 
        
+# @api_view(["POST"])
+# @permission_classes([permissions.IsAuthenticated])
+# def prompt_gpt(request):
+#     chat_id=request.data.get("chat_id")
+#     content=request.data.get("content")
+#     print(request.data)
+    
+#     if not chat_id:
+#         return Response({"error":"Chat ID was not provide"},status=400)
+    
+#     if not content:
+#         return Response({"error":"There was not prompt passed"},status=400)
+    
+#     chat,created=Chat.objects.get_or_create(id=chat_id,defaults={"user":request.user}) #Tries to find a chat with the given UUID.If it doesn't exist, creates a new one with that ID.
+    
+#     if chat.user!=request.user:
+#         return Response({"error":"Unauthorized acces to this chat"},status=403)
+
+
+#     if created or not chat.title:
+#         chat.title = createChatTitle(content)
+#         chat.save()
+    
+#     chat_message=ChatMessage.objects.create(role="user",chat=chat,content=content)
+    
+#     openai_messages = chat.messages.order_by("created_at")[:10]
+    
+#     # openai_messages=[{"role":message.role,"content":message.content} for message in chat_message]
+#     openai_messages = [{"role": message.role, "content": message.content} 
+#                        for message in chat.messages.order_by("created_at")[:10] #collect last 10 messages for context
+#                        ]
+
+    
+#     if not any(message["role"]=="assistant" for message in openai_messages):  #if message is first
+#         openai_messages.insert(0,{"role":"assistant","content":"You are a helpful assistant"})
+    
+#     try:
+#         response = client.chat.completions.create(
+#             model="gpt-4o-mini",
+#             messages=openai_messages
+#         )
+#         openai_reply=response.choices[0].message.content
+#     except Exception as e:
+#         return Response({"Error": f"An errror from openAI{str(e)}"})
+    
+#     ChatMessage.objects.create(role="assistant",content=openai_reply,chat=chat)
+#     return Response({"reply":openai_reply,'title':chat.title},status=status.HTTP_201_CREATED)
+
+
+from PyPDF2 import PdfReader
+from .models import UploadedPDF  # ensure it's imported
+
+
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def prompt_gpt(request):
-    chat_id=request.data.get("chat_id")
-    content=request.data.get("content")
-    print(request.data)
-    
+    chat_id = request.data.get("chat_id")
+    content = request.data.get("content")
+
     if not chat_id:
-        return Response({"error":"Chat ID was not provide"},status=400)
-    
+        return Response({"error": "Chat ID was not provided"}, status=400)
+
     if not content:
-        return Response({"error":"There was not prompt passed"},status=400)
-    
-    chat,created=Chat.objects.get_or_create(id=chat_id,defaults={"user":request.user}) #Tries to find a chat with the given UUID.If it doesn't exist, creates a new one with that ID.
-    
-    if chat.user!=request.user:
-        return Response({"error":"Unauthorized acces to this chat"},status=403)
+        return Response({"error": "There was no prompt passed"}, status=400)
 
+    # Fetch or create chat
+    chat, created = Chat.objects.get_or_create(id=chat_id, defaults={"user": request.user})
 
+    if chat.user != request.user:
+        return Response({"error": "Unauthorized access to this chat"}, status=403)
+
+    # Set chat title if new
     if created or not chat.title:
         chat.title = createChatTitle(content)
         chat.save()
-    
-    chat_message=ChatMessage.objects.create(role="user",chat=chat,content=content)
-    
-    openai_messages = chat.messages.order_by("created_at")[:10]
-    
-    # openai_messages=[{"role":message.role,"content":message.content} for message in chat_message]
-    openai_messages = [{"role": message.role, "content": message.content} 
-                       for message in chat.messages.order_by("created_at")[:10] #collect last 10 messages for context
-                       ]
 
-    
-    if not any(message["role"]=="assistant" for message in openai_messages):  #if message is first
-        openai_messages.insert(0,{"role":"assistant","content":"You are a helpful assistant"})
-    
+    # Save user message
+    ChatMessage.objects.create(role="user", chat=chat, content=content)
+
+    # 🔍 Check if there's a PDF associated with the chat
+    pdf = UploadedPDF.objects.filter(chat=chat).first()
+
+    if pdf:
+        # Use stored text_content as context
+        pdf_text = pdf.text_content
+        full_prompt = f"{pdf_text.strip()}\n\nUser: {content}"
+        print(full_prompt)
+        openai_messages = [{"role": "user", "content": full_prompt}]
+    else:
+        print("INSIDE ELSE")
+        # No PDF → use chat history
+        openai_messages = [
+            {"role": message.role, "content": message.content}
+            for message in chat.messages.order_by("created_at")[:10]
+        ]
+        if not any(msg["role"] == "assistant" for msg in openai_messages):
+            openai_messages.insert(0, {"role": "assistant", "content": "You are a helpful assistant."})
+
+    # 🔮 Call OpenAI
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=openai_messages
         )
-        openai_reply=response.choices[0].message.content
+        openai_reply = response.choices[0].message.content
     except Exception as e:
-        return Response({"Error": f"An errror from openAI{str(e)}"})
-    
-    ChatMessage.objects.create(role="assistant",content=openai_reply,chat=chat)
-    return Response({"reply":openai_reply,'title':chat.title},status=status.HTTP_201_CREATED)
+        return Response({"error": f"An error occurred with OpenAI: {str(e)}"}, status=500)
+
+    # Save assistant reply
+    ChatMessage.objects.create(role="assistant", content=openai_reply, chat=chat)
+
+    return Response({"reply": openai_reply, "title": chat.title}, status=status.HTTP_201_CREATED)
+
 
 
 @api_view(["GET"])
@@ -147,27 +218,67 @@ def get_chat_conversation(request,chat_id):
         return Response({"error":"Chat not found"},status=404)
 
 
-#TO LOAD ENTIRE CHAT HISTORY
+""" PDF """
 
-""" 
-@api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
-def user_chat_history(request):
-    user = request.user
-    chats = Chat.objects.filter(user=user).order_by("-created_at")  # only their chats
 
-    data = []
-    for chat in chats:
-        messages = ChatMessage.objects.filter(chat=chat).order_by("created_at")
-        data.append({
-            "chat_id": str(chat.id),
-            "title": chat.title,
-            "messages": [
-                {"role": msg.role, "content": msg.content, "timestamp": msg.created_at}
-                for msg in messages
-            ]
-        })
+class UploadedPDFView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
-    return Response(data)
+    def post(self, request):
+        print(request.data)
+        serializer = UploadedPDFSerializer(data=request.data)
+        if serializer.is_valid():
+            chat_id = serializer.validated_data.pop('chat_id')
 
-"""
+            try:
+                # chat = Chat.objects.get(id=chat_id, user=request.user)
+                chat, created = Chat.objects.get_or_create(
+                id=chat_id,
+                defaults={'user': request.user}
+                )
+
+
+            except Chat.DoesNotExist:
+                return Response({'error': 'Chat not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            pdf_file = serializer.validated_data['pdf_file']
+
+            # Parse text content from PDF
+            text_content = self.extract_text_from_pdf(pdf_file)
+
+            # Save UploadedPDF instance
+            uploaded_pdf = UploadedPDF.objects.create(
+                user=request.user,
+                chat=chat,
+                pdf_file=pdf_file,
+                text_content=text_content
+            )
+
+            return Response({'message': 'PDF uploaded and parsed successfully.'}, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def extract_text_from_pdf(self, pdf_file):
+        text = ''
+        with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
+            for page in doc:
+                text += page.get_text()
+        print(text)
+        return text.strip()
+
+
+# import PyPDF2
+# class UploadedPDFViewSet(viewsets.ModelViewSet):
+#     queryset = UploadedPDF.objects.all()
+#     serializer_class = UploadedPDFSerializer
+#     permission_classes = [permissions.IsAuthenticated]
+#     parser_classes = [MultiPartParser, FormParser]  # Required for file upload
+
+#     def get_queryset(self):
+#         # Return PDFs only for the authenticated user
+#         return UploadedPDF.objects.filter(user=self.request.user)
+
+#     def get_serializer_context(self):
+#         # Pass the request to serializer context for validation and user access
+#         return {'request': self.request}

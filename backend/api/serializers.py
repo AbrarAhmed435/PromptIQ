@@ -1,37 +1,16 @@
-# from rest_framework import serializers
-# from django.contrib.auth import get_user_model
-# from django.contrib.auth.models import User
-
-# class UserSerializer(serializers.ModelSerializer):
-#     email = serializers.EmailField(required=True)
-#     password = serializers.CharField(write_only=True, min_length=6)
-
-#     class Meta:
-#         model = User
-#         fields = ["id","email", "password"]
-#         extra_kwargs={
-#             'email':{'required':True}
-#         }
-
-#     def create(self,validated_data):
-#         username=validated_data['email'].split('@')[0]
-#         user=User.objects.create_user(
-#             username=username,
-#             email=validated_data['email'],
-#             password=validated_data['password']
-#         )
-#         return user
-
-
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
-from .models import CustomUser
+from .models import CustomUser,UploadedPDF,Chat
 from django.utils.text import slugify
 from rest_framework_simplejwt.tokens import RefreshToken
 import random
 import string
+import logging
+import PyPDF2
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -110,3 +89,14 @@ class EmailTokenObtainPairSerializer(serializers.Serializer):
             # "user_id": user.id,  Sometimes you might want to      return user info in the response or access it later:     
             # "email": user.email,
         }
+
+
+""" PDF """
+
+
+class UploadedPDFSerializer(serializers.ModelSerializer):
+    chat_id = serializers.UUIDField(write_only=True)
+
+    class Meta:
+        model = UploadedPDF
+        fields = ['pdf_file', 'chat_id']

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from api.models import Chat,ChatMessage,CustomUser
+from api.models import Chat,ChatMessage,CustomUser,UploadedPDF
 from django.contrib.auth import get_user_model
 
 # Register your models here.
@@ -21,3 +21,11 @@ class ChatAdmin(admin.ModelAdmin):
 class ChatMessageAdmin(admin.ModelAdmin):
     model=ChatMessage
     list_display=("id","role","content","created_at")
+
+
+@admin.register(UploadedPDF)
+class UploadedPDFAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'chat', 'pdf_file', 'uploaded_at')
+    search_fields = ('user__username', 'chat__id')
+
+
