@@ -2,13 +2,21 @@ import { useEffect, useState, useRef } from "react";
 import { IoSend } from "react-icons/io5";
 import { MdDelete } from "react-icons/md";
 import api from "./api";
+import "react-tooltip/dist/react-tooltip.css";
 import { SiGoogleearth } from "react-icons/si";
 import { FaBars } from "react-icons/fa";
 import { IoIosLogOut, IoIosCloseCircleOutline } from "react-icons/io";
+import { IoAddSharp } from "react-icons/io5";
+import { Tooltip } from "react-tooltip";
+import { PiFilePdfDuotone } from "react-icons/pi";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { FaEyeDropper } from "react-icons/fa";
 import { IoAddOutline, IoCloseSharp } from "react-icons/io5";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { MdOutlineFileDownload } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 /* 
@@ -38,6 +46,8 @@ export default function Home() {
   const [showMarkdown, setShowMarkdown] = useState(false);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showBox, setShowBox] = useState(false);
 
   useEffect(() => {
     fetchHistory();
@@ -62,39 +72,38 @@ export default function Home() {
     return () => clearInterval(interval); // clean up if interrupted
   }, [fullReply]);
 
- const handlePDFUpload = async () => {
-  if (!pdfFile) {
-    alert("Please select a PDF file first");
-    return;
-  }
-
-  if (!chat_id) {
-    alert("Chat ID is missing");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("pdf_file", pdfFile);
-  formData.append("chat_id", chat_id);  // ✅ Send chat_id
-
-  try {
-    const res = await api.post("/api/pdfs/", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    if (res.status === 201 || res.status === 200) {
-      setUploadStatus("PDF uploaded successfully");
-    } else {
-      setUploadStatus("Failed to upload PDF");
+  const handlePDFUpload = async () => {
+    if (!pdfFile) {
+      toast.info("Please select a PDF file first");
+      return;
     }
-  } catch (error) {
-    console.log("PDF upload error:", error);
-    setUploadStatus("Error uploading PDF");
-  }
-};
 
+    if (!chat_id) {
+      toast.error("Chat ID is missing");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("pdf_file", pdfFile);
+    formData.append("chat_id", chat_id); // ✅ Send chat_id
+
+    try {
+      const res = await api.post("/api/pdfs/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.status === 201 || res.status === 200) {
+        setUploadStatus("PDF uploaded successfully");
+      } else {
+        setUploadStatus("Failed to upload PDF");
+      }
+    } catch (error) {
+      console.log("PDF upload error:", error);
+      setUploadStatus("Error uploading PDF");
+    }
+  };
 
   const handleDelete = async (id) => {
     // const confirmDelete = window.confirm("Delete this chat?");
@@ -106,15 +115,45 @@ export default function Home() {
         setReply("");
       } else {
         console.group(res.status);
-        alert("failed to delete chat history");
+        toast.error("failed to delete chat history");
       }
     } catch (error) {
-      alert(error);
+      toast.error(error);
     }
     handleNewChat();
   };
+  const handleDownload = async () => {
+    try {
+      const res = await api.get(`api/chat/${chat_id}/download-pdf/`, {
+        responseType: "blob", // Important for binary files
+      });
+
+      if (res.status === 200) {
+        // Create a Blob URL for the PDF
+        const fileURL = window.URL.createObjectURL(new Blob([res.data]));
+
+        // Create a temporary download link
+        const link = document.createElement("a");
+        link.href = fileURL;
+        link.setAttribute("download", `chat_${chat_id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        toast.error("Failed to download PDF");
+      }
+    } catch (error) {
+      toast.error("Error downloading PDF: " + error);
+    }
+  };
+  const handleAddPdf = (e) => {
+    e.preventDefault(e);
+    setShowBox(!showBox);
+  };
+
   const handlefetchChat = async (chat_id) => {
     setWelcome("");
+    setChatId(chat_id);
     try {
       const res = await api.get(`/api/chat/history/${chat_id}/`);
       if (res.status === 200) {
@@ -129,7 +168,7 @@ export default function Home() {
         setChatId(res.data.chat_id);
       }
     } catch (err) {
-      alert("Failed to load chat");
+      toast.error("Failed to load chat");
     }
   };
   const fetchHistory = async () => {
@@ -142,6 +181,29 @@ export default function Home() {
       console.log(error);
     }
   };
+  const handleImprove = async (e) => {
+    e.preventDefault();
+
+    if (!prompt.length) {
+      toast.error("Give prompt");
+      return;
+    }
+
+    try {
+      const res = await api.post("/api/improve/prompt/", {
+        message: prompt,
+      });
+
+      if (res.status === 200) {
+        console.log("response:", res.data);
+        setPrompt(res.data.betterprompt); // ✅ correct key
+        toast.success("Prompt improved!");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error improving prompt");
+    }
+  };
 
   const sendQuery = async (e) => {
     e.preventDefault();
@@ -152,7 +214,6 @@ export default function Home() {
     console.log("Sending:", { chat_id, content: prompt });
     const userPrompt = prompt;
     setPrompt("");
-
     try {
       const res = await api.post("/api/prompt_gpt/", {
         chat_id,
@@ -168,7 +229,7 @@ export default function Home() {
         setWaiting("Wating finished");
       }
     } catch (error) {
-      alert(error);
+      toast.error(error);
     }
     setPrompt("");
   };
@@ -187,6 +248,7 @@ export default function Home() {
     setWaiting("");
     setReply("");
     setChatId(newId);
+    toast.success("New Chat Created");
     // console.log("New Chat ID:", newId);
   };
 
@@ -201,18 +263,6 @@ export default function Home() {
       <h3 className="logout" onClick={handleLogout}>
         <IoIosLogOut style={{ verticalAlign: "middle" }} /> Logout
       </h3>
-      {/* <form onSubmit={fetchchat} className="chat-box">
-                <input type="text" 
-                value={prompt}
-                onChange={(e)=>setPrompt(e.target.value)}
-                placeholder="Enter your prompt"
-                />
-                <button><IoSend /></button>
-            </form>
-            <textarea name="" id=""
-            value={reply}
-            readOnly
-            ></textarea> */}
 
       <div className={`chat-history ${sidebarOpen ? "open" : ""}`}>
         <h2 className="histroy-head">HISTORY</h2>
@@ -231,7 +281,7 @@ export default function Home() {
             <div key={his.id} className="title-item">
               <p onClick={() => handlefetchChat(his.id)}>{his.title}</p>
               <button onClick={() => handleDelete(his.id)}>
-                <MdDelete style={{ verticalAlign: "middle", color: "white" }} />
+                <MdDelete style={{ verticalAlign: "middle" }} />
               </button>
             </div>
           ))}
@@ -276,28 +326,81 @@ export default function Home() {
             }}
           />
         </div>
+        {showBox && (
+          <div
+            style={{
+              /* position: "absolute",
+                  bottom: "100%", // place above the button
+                  left: "50%", */
+              marginBottom: "8px",
+              position: "fixed",
+              left: "20vw",
+              bottom: "80px",
+              background: "#2a2a2a",
+              color: "white",
+              padding: "10px",
+              borderRadius: "8px",
+              boxShadow: "0px 4px 8px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div className="pdf-upload-section">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setPdfFile(e.target.files[0])}
+              />
+              <button type="button" onClick={handlePDFUpload}>
+                Upload PDF
+              </button>
+              <p>{uploadStatus}</p>
+            </div>
+          </div>
+        )}
+        <ToastContainer />
+        <div className="prompt-section">
+          <form className="prompt-form">
+            <button className="add-pdf" onClick={handleAddPdf}>
+              <IoAddSharp style={{ verticalAlign: "center" }} />
+            </button>
 
-        <form onSubmit={sendQuery} className="prompt-area">
-          <input
-            type="text"
-            placeholder="Ask Anything"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-          />
-          <button>
-            <IoSend size={32} style={{ verticalAlign: "middle" }} />
-          </button>
-        </form>
-        <div className="pdf-upload-section">
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => setPdfFile(e.target.files[0])}
-          />
-          <button type="button" onClick={handlePDFUpload}>
-            Upload PDF
-          </button>
-          <p>{uploadStatus}</p>
+            <input
+              type="text"
+              placeholder="Ask Anything"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+            />
+            <a
+              data-tooltip-id="my-tooltip"
+              data-tooltip-content="Improve Your Prompt"
+              data-tooltip-place="top"
+            >
+              <button className="improve-btn" onClick={handleImprove}>
+                <FaEyeDropper style={{ verticalAlign: "middle" }} />
+              </button>
+            </a>
+            <Tooltip id="my-tooltip" />
+            <button className="send-btn" onClick={sendQuery}>
+              <IoSend size={22} style={{ verticalAlign: "middle" }} />
+            </button>
+            <button onClick={handleDownload} className="download-btn">
+              <MdOutlineFileDownload
+                size={20}
+                style={{ verticalAlign: "middle" }}
+              />{" "}
+              <PiFilePdfDuotone size={20} style={{ verticalAlign: "middle" }} />
+            </button>
+          </form>
+          {/*  <div className="pdf-upload-section">
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setPdfFile(e.target.files[0])}
+            />
+            <button type="button" onClick={handlePDFUpload}>
+              Upload PDF
+            </button>
+            <p>{uploadStatus}</p>
+          </div> */}
         </div>
       </div>
     </div>

@@ -11,6 +11,9 @@ from django.contrib.auth import get_user_model
 from rest_framework.parsers import MultiPartParser,FormParser
 from rest_framework.exceptions import ValidationError
 import fitz
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 import PyPDF2
 
@@ -42,7 +45,26 @@ class createUserView(generics.CreateAPIView):
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class=EmailTokenObtainPairSerializer
 
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def improvePrompt(request):
+    user_message=request.data.get("message","")
+    if not user_message:
+        return Response({"error":"No message provided"},status=400)
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+               {"role": "system", "content": "You are a Prompt Optimizer. Your task is to imporve this prompt. Dont start like this :Here’s an improved version of your prompt for a more detailed and engaging response:, directly give the prompt"},
 
+                {"role": "user", "content": user_message},
+            ]
+        )
+        prompt = response.choices[0].message.content.strip()
+    except Exception: 
+        prompt=user_message
+    return Response({"betterprompt":prompt},status=200)
+        
    
 def createChatTitle(user_message):
     try:
@@ -58,56 +80,6 @@ def createChatTitle(user_message):
     except Exception: 
         title = user_message[:50]
     return title
-
-       
-# @api_view(["POST"])
-# @permission_classes([permissions.IsAuthenticated])
-# def prompt_gpt(request):
-#     chat_id=request.data.get("chat_id")
-#     content=request.data.get("content")
-#     print(request.data)
-    
-#     if not chat_id:
-#         return Response({"error":"Chat ID was not provide"},status=400)
-    
-#     if not content:
-#         return Response({"error":"There was not prompt passed"},status=400)
-    
-#     chat,created=Chat.objects.get_or_create(id=chat_id,defaults={"user":request.user}) #Tries to find a chat with the given UUID.If it doesn't exist, creates a new one with that ID.
-    
-#     if chat.user!=request.user:
-#         return Response({"error":"Unauthorized acces to this chat"},status=403)
-
-
-#     if created or not chat.title:
-#         chat.title = createChatTitle(content)
-#         chat.save()
-    
-#     chat_message=ChatMessage.objects.create(role="user",chat=chat,content=content)
-    
-#     openai_messages = chat.messages.order_by("created_at")[:10]
-    
-#     # openai_messages=[{"role":message.role,"content":message.content} for message in chat_message]
-#     openai_messages = [{"role": message.role, "content": message.content} 
-#                        for message in chat.messages.order_by("created_at")[:10] #collect last 10 messages for context
-#                        ]
-
-    
-#     if not any(message["role"]=="assistant" for message in openai_messages):  #if message is first
-#         openai_messages.insert(0,{"role":"assistant","content":"You are a helpful assistant"})
-    
-#     try:
-#         response = client.chat.completions.create(
-#             model="gpt-4o-mini",
-#             messages=openai_messages
-#         )
-#         openai_reply=response.choices[0].message.content
-#     except Exception as e:
-#         return Response({"Error": f"An errror from openAI{str(e)}"})
-    
-#     ChatMessage.objects.create(role="assistant",content=openai_reply,chat=chat)
-#     return Response({"reply":openai_reply,'title':chat.title},status=status.HTTP_201_CREATED)
-
 
 from PyPDF2 import PdfReader
 from .models import UploadedPDF  # ensure it's imported
@@ -172,6 +144,8 @@ def prompt_gpt(request):
     ChatMessage.objects.create(role="assistant", content=openai_reply, chat=chat)
 
     return Response({"reply": openai_reply, "title": chat.title}, status=status.HTTP_201_CREATED)
+
+
 
 
 
@@ -267,18 +241,37 @@ class UploadedPDFView(APIView):
         print(text)
         return text.strip()
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def download_latest_response_pdf(request,chat_id):
+    try:
+        chat=Chat.objects.get(id=chat_id,user=request.user)
+    except Chat.DoesNotExist:
+        return Response({"error":"Chat not found or unauthorized"},status=404)
+    latest_message=ChatMessage.objects.filter(chat=chat,role="assistant").last()
+    
+    if not latest_message:
+        return Response({"Error":"No assistance response found for this chat"},status=404);
+    
+    response=HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"]='attachment: filename="response.pdf"'
+    
+    p = canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+    y = height - 40
+    p.setFont("Helvetica", 12)
+    
+    for line in latest_message.content.split("\n"):
+        for chunk in [line[i:i+90] for i in range(0, len(line), 90)]:  # wrap at ~90 chars
+            p.drawString(50, y, chunk)
+            y -= 20
+            if y < 50:
+                p.showPage()
+                y = height - 40
+    p.save()
+    return response
+    
+    
+    
 
-# import PyPDF2
-# class UploadedPDFViewSet(viewsets.ModelViewSet):
-#     queryset = UploadedPDF.objects.all()
-#     serializer_class = UploadedPDFSerializer
-#     permission_classes = [permissions.IsAuthenticated]
-#     parser_classes = [MultiPartParser, FormParser]  # Required for file upload
 
-#     def get_queryset(self):
-#         # Return PDFs only for the authenticated user
-#         return UploadedPDF.objects.filter(user=self.request.user)
-
-#     def get_serializer_context(self):
-#         # Pass the request to serializer context for validation and user access
-#         return {'request': self.request}

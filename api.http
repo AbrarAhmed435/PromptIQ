@@ -14,7 +14,7 @@ Content-Type: application/json
 {
   "first_name": "John",
   "last_name":"cena",
-  "email": "cena@example.com",
+  "email": "cenaa@example.com",
   "password": "test1234",
   "confirm_password":"test1234"
 }
@@ -25,9 +25,20 @@ POST http://localhost:8000/api/token/ HTTP/1.1
 Content-Type: application/json
 
 {
-  "email": "abrar_2022bite057@nitsri.ac.in",
-  "password":"chips1234"
+  "email": "cenaa@example.com",
+  "password":"test1234"
 }
+
+###
+POST http://localhost:8000/api/improve/prompt/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU1NTE4NTkxLCJpYXQiOjE3NTU1MTQ5OTEsImp0aSI6ImRhNmFhNjUxZjA0YTQ0M2I4ZWNjNjRhYzNlM2IwMzI5IiwidXNlcl9pZCI6IjE3In0.fjo2T-M4g4OfJA4xqd4PGA7N1XueZzt4QgaC0QMzgXA
+
+{
+  "message":"How to make chai"
+}
+
+
 ###
 
 DELETE http://localhost:8000/api/chat/delete/556e8402-e29b-41d4-a715-449659460810/ HTTP/1.1
