@@ -5,6 +5,7 @@ import api from "./api";
 import "react-tooltip/dist/react-tooltip.css";
 import { SiGoogleearth } from "react-icons/si";
 import { FaBars } from "react-icons/fa";
+import { useMediaQuery } from "react-responsive";
 import { IoIosLogOut, IoIosCloseCircleOutline } from "react-icons/io";
 import { IoAddSharp } from "react-icons/io5";
 import { Tooltip } from "react-tooltip";
@@ -48,6 +49,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showBox, setShowBox] = useState(false);
+  const isLargeScreen = useMediaQuery({ minWidth: 801 });
 
   useEffect(() => {
     fetchHistory();
@@ -387,7 +389,12 @@ export default function Home() {
                 size={20}
                 style={{ verticalAlign: "middle" }}
               />{" "}
-              <PiFilePdfDuotone size={20} style={{ verticalAlign: "middle" }} />
+              {isLargeScreen && (
+                <PiFilePdfDuotone
+                  size={20}
+                  style={{ verticalAlign: "middle" }}
+                />
+              )}
             </button>
           </form>
           {/*  <div className="pdf-upload-section">
