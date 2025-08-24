@@ -10,19 +10,25 @@ from .serializers import RegisterSerializer,EmailTokenObtainPairSerializer,Uploa
 from django.contrib.auth import get_user_model
 from rest_framework.parsers import MultiPartParser,FormParser
 from rest_framework.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
 import fitz
 from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-
 import PyPDF2
-
 from openai import OpenAI
+
 client=OpenAI()
 
 User=get_user_model()
+from google import genai
+
+# The client gets the API key from the environment variable `GEMINI_API_KEY`.
+client1 = genai.Client()
 
 # Create your views here.
+
+bot="gpt"
 
 
         
@@ -39,12 +45,29 @@ class createUserView(generics.CreateAPIView):
             "message": "User registration successful",
             "username": user.username,
             "email": user.email,
-            "first_name": user.first_name
+            "first_name": user.first_name,
+            "preferred_bot":user.preferred_bot
         }, status=status.HTTP_201_CREATED)
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class=EmailTokenObtainPairSerializer
 
+# CHOOSE MODEL
+class ChooseModelView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        print("hello")
+        choice = request.data.get("choice")
+        if choice not in ["gpt", "gemini"]:
+            return Response({"error": "Invalid choice. Use 'gpt' or 'gemini'."}, status=400)
+        request.user.preferred_bot = choice
+        request.user.save(update_fields=["preferred_bot"])
+        global bot
+        bot = request.user.preferred_bot
+        return Response({"message": f"Bot switched to {bot}"}, status=200)
+    
+    
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def improvePrompt(request):
@@ -52,37 +75,62 @@ def improvePrompt(request):
     if not user_message:
         return Response({"error":"No message provided"},status=400)
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-               {"role": "system", "content": "You are a Prompt Optimizer. Your task is to imporve this prompt. Dont start like this :Here’s an improved version of your prompt for a more detailed and engaging response:, directly give the prompt"},
+        if bot=="gpt":
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                {"role": "system", "content": "You are a Prompt Optimizer. Your task is to imporve this prompt. Dont start like this :Here’s an improved version of your prompt for a more detailed and engaging response:, directly give the prompt"},
 
-                {"role": "user", "content": user_message},
-            ]
-        )
-        prompt = response.choices[0].message.content.strip()
-    except Exception: 
+                    {"role": "user", "content": user_message},
+                ]
+            )
+            prompt = response.choices[0].message.content.strip()
+        else :
+            question=f"You are a Prompt Optimizer. Your task is to imporve this prompt {user_message}. Dont start like this :Here’s an improved version of your prompt for a more detailed and engaging response:, directly give the prompt"
+            response = client1.models.generate_content(
+                model="gemini-2.5-flash", contents=question
+            )
+            print(response.text)
+            prompt = response.text
+    except Exception as e: 
+        print(e)
         prompt=user_message
     return Response({"betterprompt":prompt},status=200)
-        
+
+
+            
    
 def createChatTitle(user_message):
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-               {"role": "system", "content": "You are a title generator. Your task is to return a very short, descriptive title in at most 5 words. Do not explain or respond with paragraphs."},
+        if bot=="gpt":
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                {"role": "system", "content": "You are a title generator. Your task is to return a very short, descriptive title in at most 5 words. Do not explain or respond with paragraphs."},
 
-                {"role": "user", "content": user_message},
-            ]
-        )
-        title = response.choices[0].message.content.strip()
+                    {"role": "user", "content": user_message},
+                ]
+            )
+            title = response.choices[0].message.content.strip()
+        else:
+            question=f"look at this message {user_message}You are a title generator. Your task is to return a very short, descriptive title in at most 5 words. Do not explain or respond with paragraphs"
+            response = client1.models.generate_content(
+                model="gemini-2.5-flash", contents=question
+            )
+            title=response.text
     except Exception: 
         title = user_message[:50]
     return title
 
 from PyPDF2 import PdfReader
 from .models import UploadedPDF  # ensure it's imported
+
+def format_messages_for_gemini(messages):
+    formatted = ""
+    for msg in messages:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        formatted += f"{role}: {msg['content']}\n"
+    return formatted.strip()
 
 
 @api_view(["POST"])
@@ -121,7 +169,6 @@ def prompt_gpt(request):
         print(full_prompt)
         openai_messages = [{"role": "user", "content": full_prompt}]
     else:
-        print("INSIDE ELSE")
         # No PDF → use chat history
         openai_messages = [
             {"role": message.role, "content": message.content}
@@ -129,14 +176,23 @@ def prompt_gpt(request):
         ]
         if not any(msg["role"] == "assistant" for msg in openai_messages):
             openai_messages.insert(0, {"role": "assistant", "content": "You are a helpful assistant."})
+        
+        mymessage = openai_messages
 
     # 🔮 Call OpenAI
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=openai_messages
-        )
-        openai_reply = response.choices[0].message.content
+        if(bot=="gpt"):
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=mymessage
+            )
+            openai_reply=response.choices[0].message.content.strip()
+        else:
+            mymessage_str = format_messages_for_gemini(mymessage)
+            response = client1.models.generate_content( 
+                model="gemini-2.5-flash", contents=mymessage_str
+                )
+            openai_reply = response.text
     except Exception as e:
         return Response({"error": f"An error occurred with OpenAI: {str(e)}"}, status=500)
 

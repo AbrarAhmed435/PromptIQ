@@ -209,6 +209,10 @@ export default function Home() {
 
   const sendQuery = async (e) => {
     e.preventDefault();
+    if(!prompt.length) {
+      toast.warning("Provide a prompt");
+      return ;
+    }
     setReply("");
     setWelcome("");
     setWaiting(`${prompt} !!!Thinking...`);

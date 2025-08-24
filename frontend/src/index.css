@@ -443,11 +443,11 @@ position:relative;
   flex-direction: column;   /* stack items vertically */
   align-items: center;
   justify-content: center;
-  gap: 12px;                /* spacing between elements */
-  padding: 16px;
+  gap: 5px;                /* spacing between elements */
+  padding: 6px;
   background-color: #1e1e1e;
   border-radius: 10px;
-  width: 280px;             /* fixed width (adjust if needed) */
+  width: 215px;             /* fixed width (adjust if needed) */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 

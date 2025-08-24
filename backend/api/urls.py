@@ -14,7 +14,9 @@ urlpatterns = [
     path('improve/prompt/',views.improvePrompt,name="imporve_prompt"),
     path("chat/delete/<uuid:chat_id>/",views.delete_chat,name="delete_chat"),
     path("chat/history/<uuid:chat_id>/",views.get_chat_conversation,name="get chat messages"),
-    path("chat/<uuid:chat_id>/download-pdf/",views.download_latest_response_pdf,name="download pdf")
+    path("chat/<uuid:chat_id>/download-pdf/",views.download_latest_response_pdf,name="download pdf"),
+    path("choose/model/",views.ChooseModelView.as_view(),name="choose model"),
+    # path("choose/model/",views.ChooseModelView.as_view(),name="choose model"),
     
     # path("",include(router.urls)),
 ]

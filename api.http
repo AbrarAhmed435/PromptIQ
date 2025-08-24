@@ -1,9 +1,9 @@
 POST http://localhost:8000/api/prompt_gpt/ HTTP/1.1
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0NTQ4MzE5LCJpYXQiOjE3NTQ1NDQ3MTksImp0aSI6IjMwZDllMzgwMzg1ZDRmMzc5NmU0YmYwMzFhMzE2ZDNhIiwidXNlcl9pZCI6IjE0In0.VqRlKJGVVlOLTkZC1hmlBW_XHUzq7MmabvyIZKBYTL4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU1OTgyNDg2LCJpYXQiOjE3NTU5Nzg4ODYsImp0aSI6ImMxODhkMTUwMjllNjRjMDNhMjA0Nzc4Mjg3MDc4N2EyIiwidXNlcl9pZCI6IjE3In0.YyYsGPmS3ahpdRoTWUgKtRvIm4YK2YpVI7fdT9sunak
 
 {
-    "chat_id":"550e8400-e29b-41d4-a716-446655433200",
+    "chat_id":"550e8400-e29b-41d4-a716-446655733200",
     "content":"How to make money"
 }
 
@@ -12,9 +12,9 @@ POST http://localhost:8000/api/register/ HTTP/1.1
 Content-Type: application/json
 
 {
-  "first_name": "John",
+  "first_name": "don",
   "last_name":"cena",
-  "email": "cenaa@example.com",
+  "email": "don@example.com",
   "password": "test1234",
   "confirm_password":"test1234"
 }
@@ -25,8 +25,8 @@ POST http://localhost:8000/api/token/ HTTP/1.1
 Content-Type: application/json
 
 {
-  "email": "cenaa@example.com",
-  "password":"test1234"
+  "email": "abrar_2022bite057@nitsri.ac.in",
+  "password":"chips1234"
 }
 
 ###
@@ -52,3 +52,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiY
 POST http://localhost:8000/api/pdfs/ HTTP/1.1
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0NTkwMzY1LCJpYXQiOjE3NTQ1ODY3NjUsImp0aSI6ImUzMDRiZDQwNjljNTQ0Mjc5NjgwNjFjMDczNmZjNjZiIiwidXNlcl9pZCI6IjE0In0.8hnat38a1hJWL3nbM3OrGBISc0b7dG8la3dpUsJnTpY
 Content-Type: multipart/form-data
+###
+POST http://localhost:8000/api/choose/model/ HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2MDY3MzAyLCJpYXQiOjE3NTYwNjM3MDIsImp0aSI6ImY4OWQ0YjQzZjBjNjQ0MjNiMGM4YmNjM2EwYzIxZWNkIiwidXNlcl9pZCI6IjE0In0.ISXsGjtw7wpFR1V0f_xmpr1rgRk9kGvA_iusoNPVn5I
+Content-Type: application/json
+
+{
+  "choice":"gemini"
+}

@@ -11,6 +11,11 @@ from django.conf import settings
 # admin.site.register(User)
 class CustomUser(AbstractUser):
     email=models.EmailField(unique=True)
+    preferred_bot = models.CharField(
+        max_length=10,
+        choices=[("gpt", "GPT"), ("gemini", "Gemini")],
+        default="gpt"
+    )
     
     def __str__(self):
         return self.username

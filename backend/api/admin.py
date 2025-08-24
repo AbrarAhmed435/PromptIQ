@@ -9,7 +9,13 @@ CustomUser = get_user_model()
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ('username', 'email', 'is_staff')
+    list_display = ('username', 'email', 'is_staff','preferred_bot')
+    fieldsets = UserAdmin.fieldsets + (
+        ("Bot Preference", {"fields": ("preferred_bot",)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("Bot Preference", {"fields": ("preferred_bot",)}),
+    )
     
 
 @admin.register(Chat)
