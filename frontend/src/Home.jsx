@@ -42,6 +42,7 @@ export default function Home() {
   const [history, setHistory] = useState([]);
   const [fullReply, setFullReply] = useState("");
   const [welcome, setWelcome] = useState("");
+  const [modelChoice,setModelChoice]=useState("gpt");
   const [waiting, setWaiting] = useState("");
   const typingIndex = useRef(0);
   const [showMarkdown, setShowMarkdown] = useState(false);
@@ -73,6 +74,21 @@ export default function Home() {
 
     return () => clearInterval(interval); // clean up if interrupted
   }, [fullReply]);
+ const handleModelChange=(e)=>{
+  setModelChoice(e.target.value);
+ }
+const handleSendModelChoice= async (e)=>{
+  console.log("Choice being sent:", modelChoice);
+  e.preventDefault();
+  try{
+    const res= await api.post(
+      '/api/choose/model/',{choice:modelChoice},
+    );
+    toast.success(res.data.message || "Model switched!");
+  }catch(error){
+    toast.error("Failed to change model");
+  }
+};
 
   const handlePDFUpload = async () => {
     if (!pdfFile) {
@@ -107,14 +123,16 @@ export default function Home() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (e,id) => {
+    e.preventDefault();
     // const confirmDelete = window.confirm("Delete this chat?");
     // if (!confirmDelete) return;
     try {
       const res = await api.delete(`api/chat/delete/${id}/`);
       if (res.status == 200) {
         fetchHistory();
-        setReply("");
+        toast.warning(`Chat with id ${id} deleted`)
+
       } else {
         console.group(res.status);
         toast.error("failed to delete chat history");
@@ -122,7 +140,6 @@ export default function Home() {
     } catch (error) {
       toast.error(error);
     }
-    handleNewChat();
   };
   const handleDownload = async () => {
     try {
@@ -283,10 +300,15 @@ export default function Home() {
         )}
 
         <div style={{ paddingTop: "0px" }} className="title">
+          <select value={modelChoice} onChange={handleModelChange}>
+            <option value="gpt">gpt 40-mini</option>
+            <option value="gemini">gemini 2.5</option>
+          </select>
+          <button onClick={handleSendModelChoice}>Save</button>
           {history.map((his) => (
             <div key={his.id} className="title-item">
               <p onClick={() => handlefetchChat(his.id)}>{his.title}</p>
-              <button onClick={() => handleDelete(his.id)}>
+              <button onClick={(e) => handleDelete(e,his.id)}>
                 <MdDelete style={{ verticalAlign: "middle" }} />
               </button>
             </div>

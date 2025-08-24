@@ -65,7 +65,7 @@ class ChooseModelView(APIView):
         request.user.save(update_fields=["preferred_bot"])
         global bot
         bot = request.user.preferred_bot
-        return Response({"message": f"Bot switched to {bot}"}, status=200)
+        return Response({"message": f"Model switched to {bot}"}, status=200)
     
     
 @api_view(["POST"])
