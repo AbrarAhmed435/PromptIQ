@@ -42,7 +42,7 @@ export default function Home() {
   const [history, setHistory] = useState([]);
   const [fullReply, setFullReply] = useState("");
   const [welcome, setWelcome] = useState("");
-  const [modelChoice,setModelChoice]=useState("gpt");
+  const [modelChoice, setModelChoice] = useState("gpt");
   const [waiting, setWaiting] = useState("");
   const typingIndex = useRef(0);
   const [showMarkdown, setShowMarkdown] = useState(false);
@@ -74,21 +74,19 @@ export default function Home() {
 
     return () => clearInterval(interval); // clean up if interrupted
   }, [fullReply]);
- const handleModelChange=(e)=>{
-  setModelChoice(e.target.value);
- }
-const handleSendModelChoice= async (e)=>{
-  console.log("Choice being sent:", modelChoice);
-  e.preventDefault();
-  try{
-    const res= await api.post(
-      '/api/choose/model/',{choice:modelChoice},
-    );
-    toast.success(res.data.message || "Model switched!");
-  }catch(error){
-    toast.error("Failed to change model");
-  }
-};
+  const handleModelChange = (e) => {
+    setModelChoice(e.target.value);
+  };
+  const handleSendModelChoice = async (e) => {
+    console.log("Choice being sent:", modelChoice);
+    e.preventDefault();
+    try {
+      const res = await api.post("/api/choose/model/", { choice: modelChoice });
+      toast.success(res.data.message || "Model switched!");
+    } catch (error) {
+      toast.error("Failed to change model");
+    }
+  };
 
   const handlePDFUpload = async () => {
     if (!pdfFile) {
@@ -123,7 +121,7 @@ const handleSendModelChoice= async (e)=>{
     }
   };
 
-  const handleDelete = async (e,id) => {
+  const handleDelete = async (e, id) => {
     e.preventDefault();
     // const confirmDelete = window.confirm("Delete this chat?");
     // if (!confirmDelete) return;
@@ -131,10 +129,8 @@ const handleSendModelChoice= async (e)=>{
       const res = await api.delete(`api/chat/delete/${id}/`);
       if (res.status == 200) {
         fetchHistory();
-        toast.warning(`Chat with id ${id} deleted`)
-
+        toast.warning(`Chat with id ${id} deleted`);
       } else {
-        console.group(res.status);
         toast.error("failed to delete chat history");
       }
     } catch (error) {
@@ -226,9 +222,9 @@ const handleSendModelChoice= async (e)=>{
 
   const sendQuery = async (e) => {
     e.preventDefault();
-    if(!prompt.length) {
+    if (!prompt.length) {
       toast.warning("Provide a prompt");
-      return ;
+      return;
     }
     setReply("");
     setWelcome("");
@@ -308,7 +304,7 @@ const handleSendModelChoice= async (e)=>{
           {history.map((his) => (
             <div key={his.id} className="title-item">
               <p onClick={() => handlefetchChat(his.id)}>{his.title}</p>
-              <button onClick={(e) => handleDelete(e,his.id)}>
+              <button onClick={(e) => handleDelete(e, his.id)}>
                 <MdDelete style={{ verticalAlign: "middle" }} />
               </button>
             </div>
@@ -357,9 +353,6 @@ const handleSendModelChoice= async (e)=>{
         {showBox && (
           <div
             style={{
-              /* position: "absolute",
-                  bottom: "100%", // place above the button
-                  left: "50%", */
               marginBottom: "8px",
               position: "fixed",
               left: "20vw",

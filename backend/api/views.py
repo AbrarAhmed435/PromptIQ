@@ -57,7 +57,6 @@ class ChooseModelView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request):
-        print("hello")
         choice = request.data.get("choice")
         if choice not in ["gpt", "gemini"]:
             return Response({"error": "Invalid choice. Use 'gpt' or 'gemini'."}, status=400)
