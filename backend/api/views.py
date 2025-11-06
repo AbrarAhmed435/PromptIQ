@@ -341,7 +341,7 @@ class ForgotPasswordView(APIView):
     permission_classes=[permissions.AllowAny]
     
     def post(self,request):
-        email=request.get("email")
+        email=request.data.get("email")
         
         if not email:
             return Response({
@@ -360,8 +360,9 @@ class ForgotPasswordView(APIView):
         
         #Reset URL (React frontend)
         
-        reset_url=f"http://localhost:5173/reset-password/{uid}/{token}"
-        
+        reset_url=f"http://localhost:5173/reset-password/uid={uid}/token={token}"
+        # reset_url = f"http://localhost:5173/reset-password?uid={uid}&token={token}"
+
         
         send_mail(
             subject="Reset your Password",

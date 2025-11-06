@@ -60,3 +60,19 @@ Content-Type: application/json
 {
   "choice":"gemini"
 }
+
+###
+POST http://localhost:8000/api/forgot-password/ HTTP/1.1
+Content-Type: application/json
+
+{
+  "email":"tavaheed_2022bite008@nitsri.ac.in"
+}
+
+###
+POST http://localhost:8000/api/reset-password/MjE/cyupya-e27015accf6ae2188eb1a686d103d540/  HTTP/1.1
+Content-Type: application/json
+
+{
+  "password": "newStrongPassword1234"
+}
