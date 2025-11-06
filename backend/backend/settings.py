@@ -166,3 +166,9 @@ SIMPLE_JWT = {
 
 OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
 GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
+
+
+# ✅ EMAIL CONFIGURATION
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "no-reply@myapp.com"
+

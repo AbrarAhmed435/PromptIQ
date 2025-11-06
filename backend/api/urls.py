@@ -16,6 +16,8 @@ urlpatterns = [
     path("chat/history/<uuid:chat_id>/",views.get_chat_conversation,name="get chat messages"),
     path("chat/<uuid:chat_id>/download-pdf/",views.download_latest_response_pdf,name="download pdf"),
     path("choose/model/",views.ChooseModelView.as_view(),name="choose model"),
+    path("forget-password/",views.ForgotPasswordView.as_view(),name="Forgot email"),
+    path("reset-password/<uidb64>/<token>/",views.ResetPasswordView.as_view(),name="reset-password")
     # path("choose/model/",views.ChooseModelView.as_view(),name="choose model"),
     
     # path("",include(router.urls)),

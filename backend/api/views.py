@@ -330,3 +330,79 @@ def download_latest_response_pdf(request,chat_id):
     
 
 
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
+from django.core.mail import send_mail
+
+token_generator=PasswordResetTokenGenerator()
+
+class ForgotPasswordView(APIView):
+    permission_classes=[permissions.AllowAny]
+    
+    def post(self,request):
+        email=request.get("email")
+        
+        if not email:
+            return Response({
+                "error":"Email is required"
+            },status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user=User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({
+                "error":"Email not found"
+            },status=status.HTTP_404_NOT_FOUND)
+        # Generate UID+Token
+        uid=urlsafe_base64_encode(force_bytes(user.id))
+        token=token_generator.make_token(user)
+        
+        #Reset URL (React frontend)
+        
+        reset_url=f"http://localhost:5173/reset-password/{uid}/{token}"
+        
+        
+        send_mail(
+            subject="Reset your Password",
+            message=f"Click here to rest your password :\n{reset_url}",
+            from_email="no-reply@myapp.com",
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        
+        return Response({
+            "message":"Password rest link sent to mail"
+        },status=status.HTTP_200_OK)
+
+class ResetPasswordView(APIView):
+    permission_classes=[permissions.AllowAny]
+    
+    def post(self,request,uidb64,token):
+        password=request.data.get("password")
+        if not password:
+            return Response({
+                "error":"Password is required"
+            },status=400)
+        try:
+            uid=force_str(urlsafe_base64_decode(uidb64))
+            user=User.objects.get(id=uid)
+        except Exception:
+            return Response({
+                "error":"Invalid rest link"
+            },status=status.HTTP_400_BAD_REQUEST)
+            
+        if not token_generator.check_token(user,token):
+            return Response({
+                "error":"Invalid or expired token"
+            },status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        user.set_password(password)
+        user.save()
+        
+        return Response({
+            "message":"Password reset successful"
+        },status=status.HTTP_200_OK)
+        
+    
