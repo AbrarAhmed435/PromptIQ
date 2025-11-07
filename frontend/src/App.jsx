@@ -2,9 +2,11 @@ import { useState } from 'react'
 
 import { BrowserRouter,Route,Routes,Navigate } from 'react-router-dom'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
 import Home from './Home'
 // import Notfound from './NotFound'
 import Register from './pages/register'
+import ResetPassword from './pages/ResetPassword'
 import ProtectedRoute from './ProtectedRoutes'
 
 
@@ -38,6 +40,8 @@ function App() {
       <Route path='/login' element={<Login/>} />
       <Route path='/register'  element={<RegisterAndLogout />}/>
       <Route path='/logout' element={<Logout/>} />
+      <Route path="/forgot-password" element={<ForgotPassword/>}/>
+      <Route path="/reset-password" element={<ResetPassword/>} />
       {/* <Route path="*" element={<Notfound/>} /> */}
     </Routes>
     </BrowserRouter>    

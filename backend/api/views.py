@@ -360,8 +360,8 @@ class ForgotPasswordView(APIView):
         
         #Reset URL (React frontend)
         
-        reset_url=f"http://localhost:5173/reset-password/uid={uid}/token={token}"
-        # reset_url = f"http://localhost:5173/reset-password?uid={uid}&token={token}"
+        # reset_url=f"http://localhost:5173/reset-password/uid={uid}/token={token}"
+        reset_url = f"http://localhost:5173/reset-password?uid={uid}&token={token}"
 
         
         send_mail(
