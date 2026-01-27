@@ -181,6 +181,9 @@ def prompt_gpt(request):
     # 🔮 Call OpenAI
     try:
         if(bot=="gpt"):
+            import os
+            # print("apenai:", os.getenv("OPENAI_API_KEY"))
+            # print("Model is gpt")
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=mymessage
